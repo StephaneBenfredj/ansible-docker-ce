@@ -1,0 +1,79 @@
+# playbook to install docker CE on ubuntu 16.04
+#
+# ansible-playbook -i 10.1.2.3, dockerce_ubuntu.yml -e "ansible_python_interpreter=/usr/bin/python3" --user=ubuntu --private-key=mykey.pem --become
+#
+# note: in playbook "--become" option overlaps with use of task-based become - due to missing option in apt_key
+
+# 
+# if you wish to check reachability first: 
+# ansible -m ping all --user=ubuntu --private-key=key.pem -e "ansible_python_interpreter=/usr/bin/python3"
+
+
+
+---
+- hosts: all
+  gather_facts: no
+  
+  tasks:
+    - name: apt-get update (cache age is checked)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        
+    - name: install package apt-transport-https
+      apt:
+        name: apt-transport-https
+        state: present
+
+    - name: install package ca-certificates
+      apt:
+        name: ca-certificates
+        state: present
+
+    - name: install package curl
+      apt:
+        name: curl
+        state: present
+          
+    - name: install package software-properties-common
+      apt:
+        name: software-properties-common
+        state: present
+          
+    - name: add Docker official GPG key using Docker CE repository URL  # have to use --become in ansible-playbook as this command does not seem to support become ??
+      apt_key:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        state: present
+
+    - name: check GPG key
+      command: apt-key fingerprint 0EBFCD88
+      become: yes
+      register: aptkey 
+    
+    - debug: var=aptkey.stdout_lines
+    
+ 
+    - name: add stable repository #shortcut - hard coded xenial as result of $(lsb_release -cs)
+      apt_repository: 
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+        state: present
+
+    - name: run apt-get update
+      apt:
+        update_cache: yes
+
+    - name: install docker-ce
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: add user 'ubuntu' to group docker 
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: enable docker service on boot
+      systemd:
+        name: docker
+        enabled: yes
