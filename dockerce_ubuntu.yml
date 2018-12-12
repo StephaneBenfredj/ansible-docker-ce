@@ -1,5 +1,7 @@
 # playbook to install docker CE on ubuntu 16.04
 #
+# from: https://docs.docker.com/install/linux/docker-ce/ubuntu/
+#
 # ansible-playbook -i 10.1.2.3, dockerce_ubuntu.yml -e "ansible_python_interpreter=/usr/bin/python3" --user=ubuntu --private-key=mykey.pem --become
 #
 # note: in playbook "--become" option overlaps with use of task-based become - due to missing option in apt_key
