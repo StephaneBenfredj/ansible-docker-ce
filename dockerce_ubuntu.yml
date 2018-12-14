@@ -1,4 +1,4 @@
-# playbook to install docker CE on ubuntu 16.04
+# playbook to install docker CE on ubuntu 16.04 using docker repo
 #
 # from: https://docs.docker.com/install/linux/docker-ce/ubuntu/
 #
