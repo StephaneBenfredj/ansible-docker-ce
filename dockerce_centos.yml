@@ -1,0 +1,59 @@
+# playbook to install docker ce on centos
+#
+# ansible-playbook -i 10.1.2.3, dockerce_centos.yml --user=centos --private-key=mykey.pem --become
+#
+# reference: https://docs.docker.com/install/linux/docker-ce/centos/#install-docker-ce
+
+---
+- hosts: all
+  gather_facts: yes
+  tasks:
+  - name: upgrade all packages
+    yum:
+      name: '*'
+      state: latest
+
+  - name: install required packages
+    yum:
+      name: "{{ ce_packages }}"
+    vars:
+      ce_packages:
+      - yum-utils                       # provides yum-config-manager utility
+      - device-mapper-persistent-data   # required by the devicemapper storage driver
+      - lvm2                            # required by the devicemapper storage driver
+
+  # - name: Setup stable repository for Docker CE  # this task does not work for the moment - will fix later ... **
+  #   yum_repository:
+  #     name: docker-ce
+  #     description: Docker CE stable repo
+  #     baseurl: https://download.docker.com/linux/centos/7
+  #     file: docker-ce
+  #     gpgcheck: yes
+  #     gpgkey: https://download.docker.com/linux/centos/gpg
+  #   tags: setup
+
+  - name: Setup stable repo for Docker CE (using shell)
+    shell: |
+      sudo yum-config-manager add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    
+  - name: install latest version of Docker CE  # the docker group gets created
+    yum:
+      name: docker-ce
+      state: latest
+    tags: install
+
+  - name: start docker service
+    systemd:
+      name: docker
+      state: started
+
+  - name: add user 'centos' to group docker 
+    user:
+      name: centos
+      groups: docker
+      append: yes
+
+  - name: enable docker service on boot
+    systemd:
+      name: docker
+      enabled: yes
